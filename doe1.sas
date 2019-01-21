@@ -1,3 +1,5 @@
+libname desktop '\\vmware-host\Shared Folders\Desktop';
+
 PROC IMPORT OUT= WORK.doe 
             DATAFILE= "\\vmware-host\Shared Folders\Desktop\Counter.csv" 
             DBMS=CSV REPLACE;
@@ -18,3 +20,31 @@ PROC GLMPOWER DATA=work.doe;
 		NTOTAL = .  /*TOTAL OBSERVATIONS IN THE STUDY*/ 
 		POWER  = .8;
 RUN;
+
+/*Use 5040 or a different amount to sample from entire group, then assign everything randomly*/
+
+data new;
+	set desktop.rduch;
+run;
+
+proc surveyselect data=new
+   method=srs n=5040 out=SampleSRS;
+run;
+
+data Unif;
+set SampleSRS;
+drop Var1 Long Lat u;
+call streaminit(123);
+u = rand("Uniform"); 
+Location = ceil( 5*u );
+Price = ceil( 4*u );
+Experience = ceil( 3*u );
+Other = ceil( 4*u );
+output;
+run;
+
+proc export data=unif
+   outfile="\\vmware-host\Shared Folders\Desktop\doe1.csv" 
+   dbms=csv
+   replace;
+run;
