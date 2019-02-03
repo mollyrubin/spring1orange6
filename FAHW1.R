@@ -29,7 +29,7 @@ table(accepts$good)
 
 # Create Training and Validation #
 set.seed(12345)
-train_id <- sample(seq_len(nrow(accepts)), size = floor(0.75*nrow(accepts)))
+train_id <- sample(seq_len(nrow(accepts)), size = floor(0.7*nrow(accepts)))
 
 train <- accepts[train_id, ]
 test <- accepts[-train_id, ]
@@ -82,14 +82,15 @@ for (j in 1:length(result_all_sig)) {
 
 head(train)
 
-#need to define a weight variable where goods are 3.23 more than bads??? double check this 
-
+#need to define a weight variable where goods are 3.23 more than bads
+#Since 96.77/3.23 = 29.95975, that is the weight of a good to a bad
+train$weight = train$good*(96.77/3.23-1)+1
 
 #Build Initial Logistic Regression #
-# initial_score <- glm(data = train, bad ~ PERS_H_WOE + 
-#                        AGE_WOE + 
-#                        TMJOB1_WOE + 
-#                        INCOME_WOE +
-#                      weights = train$weight, family = "binomial")
-# 
-# summary(initial_score)
+initial_score <- glm(data = train, bad ~ PERS_H_WOE +
+                       AGE_WOE +
+                       TMJOB1_WOE +
+                       INCOME_WOE +
+                     weights = train$weight, family = "binomial")
+
+summary(initial_score)
