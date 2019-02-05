@@ -27,7 +27,7 @@ library(stringr)
 
 library(sas7bdat)
 
-
+library(sqldf)
 
 # Load Data From CSV File #
 
@@ -166,6 +166,33 @@ for (j in 1:length(result_all_sig)) {
 head(train)
 
 View(train)
+
+#MOLLY ADDITION:
+#attempting to add WOE values for some categorical variables
+#not sure how to validate if they are good or bad variables to use though...
+
+
+
+
+install.packages('woe')
+library(woe)
+
+#Data : Name of Data Set 
+#Independent : Name of the Independent Variable 
+#Continuous : True if the variable is continuous, False if variable is Ordinal or Nominal 
+#Dependent : Name of the Targer Variable 
+#C_Bin : Count of Bins to be computed 
+#Bad : Which categorical variable do you want to be bad 
+#Good : Which categorical variable do you want to be good
+
+woe_title <- woe(Data=train,"TITLE",FALSE,"good",2,Bad=0,Good=1)
+View(woe_title)
+
+train <- sqldf("select a.*, b.woe as TITLE_WOE from train a left join woe_title b on a.TITLE=b.BIN")
+View(train)
+
+
+
 
 #need to define a weight variable where goods are 3.23 more than bads
 
