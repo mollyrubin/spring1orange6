@@ -43,7 +43,10 @@ for (i in 1:201){
 ggplot(data=mean, aes(x=SCORECARD_POINTS, y=m, fill=card_result)) +
   geom_bar(stat="identity")+ scale_fill_manual(values=c("#10C60A", "#EED818", "#EC1D1D"))+ theme_minimal()+
   labs(title="Mapping System for an Individual's Score and Probability of Default ", 
-       x="Score Card Value", y = "Probability of Default")+ guides(fill=guide_legend(title=NULL))
+       x="Score Card Value", y = "Probability of Default")+ guides(fill=guide_legend(title=NULL))+
+      scale_x_continuous('Score Card Value', c(400,420,440,460,480,500,520,540,560,580,600,620,640,660,680,700))+
+      scale_y_continuous('Probability of Default', c(0.00,0.025, 0.05,0.075,0.10, 0.125))
+
 
 
 
