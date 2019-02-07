@@ -13,6 +13,11 @@ df_t <- read.sas7bdat(file = "C:\\Users\\chels\\Desktop\\MSA\\Spring 1\\Financia
 df = rbind(df_v, df_t)
 #View(df)
 #colnames(df)
+#View(df_v)
+#View(df_t)
+
+#only counting the non-missing values in our training and test set
+df = subset(df, !is.na(df[,1]))
 
 #renaming the prob of a bad
 df$prob_default = df$P_GB1
@@ -48,5 +53,14 @@ ggplot(data=mean, aes(x=SCORECARD_POINTS, y=m, fill=card_result)) +
       scale_y_continuous('Probability of Default', c(0.00,0.025, 0.05,0.075,0.10, 0.125))
 
 
+#how many applicants for each bin?
+accept =subset(df, df$SCORECARD_POINTS>520)
+dim(accept)#1730, 57.67%
+
+reject =subset(df, df$SCORECARD_POINTS<500)
+dim(reject)#936 31.2%
+
+
+#so further evaluate is 334 obs and 11.13%
 
 
