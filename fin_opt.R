@@ -385,6 +385,24 @@ ln.model$solution
 ln.model$value
 
 
+################################ 
+#Efficient Frontier
+################################
+
+
+param=seq(0.0001,0.0007, by=0.000001)
+eff.front.weight=matrix(nrow=length(param),ncol=length(mean.vec))
+eff.front.return=vector(length=length(param))
+eff.front.risk=param
+for (i in 1:length(param)){
+  bvec=c(1,param[i])
+  ln.model=solve.QP(Dmat,dvec,Amat,bvec,meq)
+  eff.front.return[i]=sum(ln.model$solution*mean.vec)
+  eff.front.risk[i]=sqrt(ln.model$value)
+  eff.front.weight[i,]=ln.model$solution
+}
+plot(eff.front.risk,eff.front.return,type='l')
+
 
 
 
