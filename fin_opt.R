@@ -14,6 +14,7 @@ if(!require('fGarch'))install.packages('fGarch')
 if(!require('rugarch'))install.packages('rugarch')
 if(!require('stringr'))install.packages('stringr')
 if(!require('tidyverse'))install.packages('tidyverse')
+if(!require('quadprog'))install.packages('quadprog')
 
 library(graphics)
 library(quantmod)
@@ -27,7 +28,11 @@ library(fGarch)
 library(rugarch)
 library(stringr)
 library(tidyverse)
+library(quadprog)
 
+#************************************************************************
+# Part 1
+#************************************************************************
 
 #################################################
 #STEP 1: GATHER STOCK DATA FOR FULL DIJA PORTFOLIO
@@ -293,5 +298,113 @@ View(model_evalutation)
 View(sorted_alphas)
 # model paramters sorted by beta
 View(sorted_betas)
+
+#************************************************************************
+# Part 2
+#************************************************************************
+
+#################################################
+#STEP 1: Portfolio Optimization
+#################################################
+
+# removing first row of na's
+top_5_returns1 <- top_5_returns[-1,]
+# getting rid of date from model predictions df
+variance_preds <- model_predictions[, -1]
+
+historical_median_returns <- sapply(top_5_returns1, median) 
+
+predicted_variance <- sapply(variance_preds, median) 
+
+historical_cov <- cov(top_5_returns1)
+
+# replacing historical variance with predicted variance
+cov_matrix <- historical_cov
+diag(cov_matrix) <- predicted_variance
+
+
+#-----------------------------------------------------------
+# using LaBarr's Code
+#-----------------------------------------------------------
+
+f <- function(x) x[1]*cov_matrix[1,1]*x[1] + x[1]*cov_matrix[1,2]*x[2] + x[1]*cov_matrix[1,3]*x[3] + x[1]*cov_matrix[1,4]*x[4] + x[1]*cov_matrix[1,5]*x[5] + 
+  x[2]*cov_matrix[2,1]*x[1] + x[2]*cov_matrix[2,2]*x[2] + x[2]*cov_matrix[2,3]*x[3] + x[2]*cov_matrix[2,4]*x[4] + x[2]*cov_matrix[2,5]*x[5] + 
+  x[3]*cov_matrix[3,1]*x[1] + x[3]*cov_matrix[3,2]*x[2] + x[3]*cov_matrix[3,3]*x[3] + x[3]*cov_matrix[3,4]*x[4] + x[3]*cov_matrix[3,5]*x[5] +
+  x[4]*cov_matrix[4,1]*x[1] + x[4]*cov_matrix[4,2]*x[2] + x[4]*cov_matrix[4,3]*x[3] + x[4]*cov_matrix[4,4]*x[4] + x[4]*cov_matrix[4,5]*x[5] +
+  x[5]*cov_matrix[5,1]*x[1] + x[5]*cov_matrix[5,2]*x[2] + x[5]*cov_matrix[5,3]*x[3] + x[5]*cov_matrix[5,4]*x[4] + x[5]*cov_matrix[5,5]*x[5]
+
+
+theta <- c(0.96,0.01,0.01,0.01,0.005)
+
+ui <- rbind(c(1,0,0,0,0),
+            c(0,1,0,0,0),
+            c(0,0,1,0,0),
+            c(0,0,0,1,0),
+            c(0,0,0,0,1),
+            c(-1,-1,-1,-1,-1),
+            c(1,1,1,1,1),
+            c(historical_median_returns))
+ci <- c(0,
+        0,
+        0,
+        0,
+        0,
+        -1,
+        0.99,
+        0.0005) # 5.04% Annual Return Spread to Daily #
+
+
+port_opt <- constrOptim(theta = theta, f = f, ui = ui, ci = ci, grad = NULL)
+
+port_weights_h <- port_opt$par
+port_var_h <- port_opt$value
+names(port_weights_h) <- names(historical_median_returns)
+final_h <- round(port_weights_h*100,2)
+
+#-----------------------------------------------------------
+# using Simmon's Code
+#-----------------------------------------------------------
+
+mean.vec <- historical_median_returns
+#cov.vec <- cov_matrix
+cov.vec <- cov(top_5_returns1)
+Dmat <- 2*cov.vec
+dvec <- rep(0,5)
+Amat <- t(matrix(c(1,1,1,1,1,mean.vec),nrow=2,byrow=T))
+bvec <- c(1,0.0005)
+meq <- 1
+ln.model <- solve.QP(Dmat,dvec,Amat,bvec,meq)
+ln.names <- names(historical_median_returns)
+
+names(ln.model$solution)=ln.names
+ln.model$solution
+ln.model$value
+
+
+ln.model$solution
+ln.model$value
+
+
+################################ 
+#Efficient Frontier
+################################
+
+
+param=seq(0.0001,0.0007, by=0.000001)
+eff.front.weight=matrix(nrow=length(param),ncol=length(mean.vec))
+eff.front.return=vector(length=length(param))
+eff.front.risk=param
+for (i in 1:length(param)){
+  bvec=c(1,param[i])
+  ln.model=solve.QP(Dmat,dvec,Amat,bvec,meq)
+  eff.front.return[i]=sum(ln.model$solution*mean.vec)
+  eff.front.risk[i]=sqrt(ln.model$value)
+  eff.front.weight[i,]=ln.model$solution
+}
+plot(eff.front.risk,eff.front.return,type='l')
+
+
+
+
 
 
